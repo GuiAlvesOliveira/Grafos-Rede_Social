@@ -1,0 +1,23 @@
+========== USUÁRIOS DE TESTE ==========
+Para todas as contas a senha é: 123123
+
+1. Nome: Alice      | E-mail: a@a.com          | Interesses: música, arte, cinema
+2. Nome: Bruno      | E-mail: b@b.com          | Interesses: esportes, tecnologia, games
+3. Nome: Carlos     | E-mail: c@c.com          | Interesses: viagens, culinária, fotografia
+4. Nome: Camila     | E-mail: ca@ca.com.br     | Interesses: música, leitura, viagens
+5. Nome: Daniela    | E-mail: d@d.com          | Interesses: literatura, música, pintura
+6. Nome: Eduardo    | E-mail: e@e.com          | Interesses: games, programação, tecnologia
+7. Nome: Fernanda   | E-mail: f@f.com          | Interesses: cinema, teatro, música
+8. Nome: Gabriel    | E-mail: g@g.com          | Interesses: futebol, basquete, natação
+9. Nome: Helena     | E-mail: h@h.com          | Interesses: viagens, fotografia, natureza
+10. Nome: Igor       | E-mail: i@i.com          | Interesses: tecnologia, robótica, IA
+11. Nome: Julia      | E-mail: j@j.com          | Interesses: culinária, moda, design
+12. Nome: Kleber     | E-mail: k@k.com          | Interesses: carros, esportes, viagens
+13. Nome: Laura      | E-mail: l@l.com          | Interesses: arte, pintura, escultura
+14. Nome: Marcelo    | E-mail: m@m.com          | Interesses: música, violão, bateria
+15. Nome: Mariana    | E-mail: ma@ma.com.br     | Interesses: leitura, fotografia, viagens
+16. Nome: Natalia    | E-mail: n@n.com          | Interesses: literatura, poesia, escrita
+17. Nome: Otavio     | E-mail: o@o.com          | Interesses: games, tecnologia, stream
+18. Nome: Paula      | E-mail: p@p.com          | Interesses: fotografia, cinema, edição
+19. Nome: Rafael     | E-mail: r@r.com          | Interesses: esportes, corrida, academia
+20. Nome: Sofia      | E-mail: s@s.com          | Interesses: culinária, doces, confeitaria
