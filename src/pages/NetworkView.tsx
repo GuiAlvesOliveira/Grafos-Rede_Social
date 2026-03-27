@@ -21,6 +21,7 @@ export default function NetworkView() {
   const [communities, setCommunities] = useState<User[][]>([]);
   const [affinity, setAffinity] = useState<User[]>([]);
   
+  const [following, setFollowing] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,8 +34,43 @@ export default function NetworkView() {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
       fetchAllGraphData(parsedUser.id);
+      fetchFollows(parsedUser.id);
     }
   }, [navigate]);
+
+  const fetchFollows = async (userId: number) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/follows/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFollowing(data.following ? data.following.map((f: any) => f.id) : []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch follows');
+    }
+  };
+
+  const handleToggleFollow = async (targetId: number) => {
+    if (!user) return;
+    try {
+      const res = await fetch('http://localhost:3001/api/follows/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ followerId: user.id, followedId: targetId })
+      });
+      if (res.ok) {
+        const { following: isFollowing } = await res.json();
+        if (isFollowing) {
+          toast.success('Começou a seguir!');
+        } else {
+          toast('Deixou de seguir.');
+        }
+        fetchFollows(user.id);
+      }
+    } catch (err) {
+      toast.error('Erro ao seguir.');
+    }
+  };
 
   const fetchAllGraphData = async (userId: number) => {
     try {
@@ -139,9 +175,18 @@ export default function NetworkView() {
                       <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '1rem' }}>
                         Distância: <strong>{s.max_dist} graus</strong>
                       </p>
-                      <button onClick={() => handleAddConnection(s.id)} className="btn-secondary" style={{ width: '100%', justifyContent: 'center', padding: '8px', fontSize: '0.9rem' }}>
-                        <UserPlus size={16} /> Conectar
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => handleAddConnection(s.id)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center', padding: '8px', fontSize: '0.9rem' }}>
+                          <UserPlus size={16} /> Conectar
+                        </button>
+                        <button 
+                          onClick={() => handleToggleFollow(s.id)} 
+                          className={following.includes(s.id) ? "btn-secondary" : "btn-primary"} 
+                          style={{ flex: 1, justifyContent: 'center', padding: '8px', fontSize: '0.9rem', backgroundColor: following.includes(s.id) ? 'transparent' : undefined }}
+                        >
+                          {following.includes(s.id) ? 'Deixar de Seguir' : 'Seguir'}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -169,9 +214,18 @@ export default function NetworkView() {
                         Interesses: {a.interests || 'Nenhum'}<br/>
                         Custo do Caminho: <strong>{a.affinityScore}</strong>
                       </p>
-                      <button onClick={() => handleAddConnection(a.id)} className="btn-secondary" style={{ width: '100%', justifyContent: 'center', padding: '8px', fontSize: '0.9rem' }}>
-                        <UserPlus size={16} /> Conectar
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => handleAddConnection(a.id)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center', padding: '8px', fontSize: '0.9rem' }}>
+                          <UserPlus size={16} /> Conectar
+                        </button>
+                        <button 
+                          onClick={() => handleToggleFollow(a.id)} 
+                          className={following.includes(a.id) ? "btn-secondary" : "btn-primary"} 
+                          style={{ flex: 1, justifyContent: 'center', padding: '8px', fontSize: '0.9rem', backgroundColor: following.includes(a.id) ? 'transparent' : undefined, color: following.includes(a.id) ? 'var(--foreground)' : 'white', borderColor: '#e11d48' }}
+                        >
+                          {following.includes(a.id) ? 'Deixar de Seguir' : 'Seguir'}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

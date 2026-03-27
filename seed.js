@@ -58,9 +58,15 @@ async function seed() {
   console.log('📄 Arquivo usuarios_teste.txt gerado com sucesso.');
 
   db.serialize(() => {
+    // Garantir que as tabelas existem antes de tentar limpar
+    db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, interests TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+    db.run(`CREATE TABLE IF NOT EXISTS connections (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id_1 INTEGER, user_id_2 INTEGER, type TEXT DEFAULT 'friend', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id_1) REFERENCES users(id), FOREIGN KEY(user_id_2) REFERENCES users(id))`);
+    db.run(`CREATE TABLE IF NOT EXISTS user_follows (id INTEGER PRIMARY KEY AUTOINCREMENT, follower_id INTEGER, followed_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(follower_id) REFERENCES users(id), FOREIGN KEY(followed_id) REFERENCES users(id), UNIQUE(follower_id, followed_id))`);
+
+    db.run("DELETE FROM user_follows");
     db.run("DELETE FROM connections");
     db.run("DELETE FROM users");
-    db.run("DELETE FROM sqlite_sequence WHERE name IN ('users', 'connections')");
+    db.run("DELETE FROM sqlite_sequence WHERE name IN ('users', 'connections', 'user_follows')");
 
     const stmtUser = db.prepare("INSERT INTO users (name, email, password, interests) VALUES (?, ?, ?, ?)");
     users.forEach(u => stmtUser.run(u.name, u.email, passwordHash, u.interests));
@@ -97,7 +103,21 @@ async function seed() {
     connections.forEach(c => stmtConn.run(c[0], c[1]));
     stmtConn.finalize();
 
-    console.log('✅ Banco de dados populado com 20 usuários e conexões estratégicas!');
+    // Strategic Follows (Directed Edges)
+    const follows = [
+      // Many following Alice (1) -> Alice possesses high In-Degree
+      [2, 1], [3, 1], [4, 1], [5, 1], [6, 1],
+      // Alice (1) following a few -> Alice has Out-Degree
+      [1, 2], [1, 3],
+      // Chain of follows
+      [8, 9], [9, 10], [10, 11]
+    ];
+
+    const stmtFollows = db.prepare("INSERT INTO user_follows (follower_id, followed_id) VALUES (?, ?)");
+    follows.forEach(f => stmtFollows.run(f[0], f[1]));
+    stmtFollows.finalize();
+
+    console.log('✅ Banco de dados populado com 20 usuários, conexões não dirigidas e follows direcionados!');
     db.close();
   });
 }

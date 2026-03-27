@@ -42,6 +42,19 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
         FOREIGN KEY(user_id_2) REFERENCES users(id)
       )
     `);
+
+    // Create Follows Table (Directed Graph)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS user_follows (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        follower_id INTEGER,
+        followed_id INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(follower_id) REFERENCES users(id),
+        FOREIGN KEY(followed_id) REFERENCES users(id),
+        UNIQUE(follower_id, followed_id)
+      )
+    `);
   }
 });
 
@@ -171,6 +184,66 @@ app.post('/api/connections', (req, res) => {
       res.json({ success: true, connectionId: this.lastID });
     }
   );
+});
+
+// Follows Endpoints (Directed Graph logic)
+app.get('/api/follows/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  // In-degree (Followers)
+  const queryFollowers = `
+    SELECT u.id, u.name, u.email, u.interests 
+    FROM users u
+    JOIN user_follows f ON u.id = f.follower_id
+    WHERE f.followed_id = ?
+  `;
+
+  // Out-degree (Following)
+  const queryFollowing = `
+    SELECT u.id, u.name, u.email, u.interests 
+    FROM users u
+    JOIN user_follows f ON u.id = f.followed_id
+    WHERE f.follower_id = ?
+  `;
+
+  db.all(queryFollowers, [userId], (err1, followers) => {
+    if (err1) return res.status(500).json({ error: 'Erro ao buscar seguidores' });
+    
+    db.all(queryFollowing, [userId], (err2, following) => {
+      if (err2) return res.status(500).json({ error: 'Erro ao buscar seguindo' });
+      
+      res.json({
+        followers: followers, // In-degree relationships
+        followersCount: followers.length, // In-degree
+        following: following, // Out-degree relationships
+        followingCount: following.length // Out-degree
+      });
+    });
+  });
+});
+
+app.post('/api/follows/toggle', (req, res) => {
+  const { followerId, followedId } = req.body;
+  if (!followerId || !followedId) return res.status(400).json({ error: 'Faltam IDs de usuário' });
+
+  // Verificar se a aresta já existe
+  db.get('SELECT id FROM user_follows WHERE follower_id = ? AND followed_id = ?', [followerId, followedId], (err, row) => {
+    if (err) return res.status(500).json({ error: 'Erro ao checar conexão.' });
+
+    if (row) {
+      // Se já existe, remove (Unfollow - quebra de aresta)
+      db.run('DELETE FROM user_follows WHERE id = ?', [row.id], function(err) {
+        if (err) return res.status(500).json({ error: 'Erro ao deixar de seguir.' });
+        res.json({ following: false });
+      });
+    } else {
+      // Se não existe, cria (Follow - aresta direcionada)
+      db.run('INSERT INTO user_follows (follower_id, followed_id) VALUES (?, ?)', [followerId, followedId], function(err) {
+        if (err) return res.status(500).json({ error: 'Erro ao seguir.' });
+        res.json({ following: true, followId: this.lastID });
+      });
+    }
+  });
 });
 
 // Graph Algorithms Endpoints

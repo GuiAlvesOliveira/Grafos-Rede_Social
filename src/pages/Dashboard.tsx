@@ -19,6 +19,8 @@ export default function Dashboard() {
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [followers, setFollowers] = useState<User[]>([]);
+  const [following, setFollowing] = useState<User[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -30,6 +32,7 @@ export default function Dashboard() {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
       fetchConnections(parsedUser.id);
+      fetchFollows(parsedUser.id);
     }
   }, [navigate]);
 
@@ -44,6 +47,41 @@ export default function Dashboard() {
       console.error('Failed to fetch connections');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFollows = async (userId: number) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/follows/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFollowers(data.followers || []);
+        setFollowing(data.following || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch follows');
+    }
+  };
+
+  const handleToggleFollow = async (targetId: number) => {
+    if (!user) return;
+    try {
+      const res = await fetch('http://localhost:3001/api/follows/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ followerId: user.id, followedId: targetId })
+      });
+      if (res.ok) {
+        const { following: isFollowing } = await res.json();
+        if (isFollowing) {
+          toast.success('Você começou a seguir este usuário!');
+        } else {
+          toast('Você deixou de seguir este usuário.');
+        }
+        fetchFollows(user.id);
+      }
+    } catch (err) {
+      toast.error('Erro ao modificar conexão dirigida.');
     }
   };
 
@@ -155,9 +193,18 @@ export default function Dashboard() {
                         <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>{result.email}</span>
                       </div>
                     </div>
-                    <button onClick={() => handleAddConnection(result.id)} className="btn-secondary" style={{ width: '100%', justifyContent: 'center', padding: '8px', fontSize: '0.9rem' }}>
-                      Adicionar Conexão
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => handleAddConnection(result.id)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center', padding: '8px', fontSize: '0.9rem' }}>
+                        Adicionar
+                      </button>
+                      <button 
+                        onClick={() => handleToggleFollow(result.id)} 
+                        className={following.some(f => f.id === result.id) ? "btn-secondary" : "btn-primary"} 
+                        style={{ flex: 1, justifyContent: 'center', padding: '8px', fontSize: '0.9rem', backgroundColor: following.some(f => f.id === result.id) ? 'transparent' : undefined }}
+                      >
+                        {following.some(f => f.id === result.id) ? 'Deixar de Seguir' : 'Seguir'}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -202,6 +249,65 @@ export default function Dashboard() {
               </button>
             </div>
           )}
+        </section>
+
+        {/* Directed Graph Sections */}
+        <section className="dashboard-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '4rem' }}>
+          
+          {/* Meus Seguidores (In-Degree) */}
+          <div style={{ background: 'var(--glass-bg)', padding: '2rem', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--primary)' }}>
+              Meus Seguidores 
+              <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 10px', borderRadius: '999px', fontSize: '1rem', marginLeft: 'auto' }}>
+                {followers.length}
+              </span>
+            </h3>
+            <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Grau de Entrada (In-degree) - Arestas apontando para você.</p>
+            
+            {followers.length === 0 ? (
+              <p style={{ color: 'var(--muted)', fontStyle: 'italic', padding: '1rem', textAlign: 'center' }}>Nenhuma aresta direcionada a você ainda.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
+                {followers.map(f => (
+                  <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                    <div>
+                      <strong style={{ display: 'block' }}>{f.name}</strong>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{f.email}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Quem eu Sigo (Out-Degree) */}
+          <div style={{ background: 'var(--glass-bg)', padding: '2rem', borderRadius: '24px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--foreground)' }}>
+              Quem eu Sigo 
+              <span style={{ background: 'var(--secondary)', color: 'var(--foreground)', padding: '2px 10px', borderRadius: '999px', fontSize: '1rem', marginLeft: 'auto' }}>
+                {following.length}
+              </span>
+            </h3>
+            <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Grau de Saída (Out-degree) - Arestas que saem do seu nó.</p>
+
+            {following.length === 0 ? (
+              <p style={{ color: 'var(--muted)', fontStyle: 'italic', padding: '1rem', textAlign: 'center' }}>Você não possui arestas de saída.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
+                {following.map(f => (
+                  <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                    <div>
+                      <strong style={{ display: 'block' }}>{f.name}</strong>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{f.email}</span>
+                    </div>
+                    <button onClick={() => handleToggleFollow(f.id)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '8px' }}>
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
       </main>
     </div>
