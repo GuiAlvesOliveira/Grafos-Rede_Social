@@ -1,73 +1,48 @@
-# React + TypeScript + Vite
+# Grafos - Rede Social
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este é um projeto que simula uma rede social utilizando conceitos de Grafos, contendo um backend em Node.js (com banco de dados SQLite) e um frontend desenvolvido com React e Vite.
 
-Currently, two official plugins are available:
+## Pré-requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Para rodar este projeto, você precisará ter instalado em sua máquina:
+- [Node.js](https://nodejs.org/)
 
-## React Compiler
+## Como Iniciar o Projeto 🚀
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Você tem duas maneiras de inicializar a aplicação:
 
-## Expanding the ESLint configuration
+### Opção 1: Automática (Recomendada para Windows)
+Na pasta raiz do projeto, você encontrará um arquivo chamado **`iniciar.bat`**.
+Basta dar **dois cliques nele** e ele cuidará de tudo para você:
+1. Instalará todas as dependências automaticamente (`npm install`).
+2. Vai criar os usuários de teste no banco de dados se for sua primeira vez executando (`npm run seed`).
+3. Subirá o servidor backend e o visualizador frontend na sua tela.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Opção 2: Pelo Terminal (Linux / Mac / Windows)
+Se preferir ou estiver fora do Windows, abra o terminal na pasta raiz do projeto e siga os comandos:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1. **Instale as dependências:**
+   ```bash
+   npm install
+   ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+2. **Crie os usuários de teste no banco (apenas na primeira vez!):**
+   ```bash
+   npm run seed
+   ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+3. **Inicie o servidor (Backend e Frontend juntos):**
+   ```bash
+   npm run dev
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Usuários de Teste (Login)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Qualquer usuário inserido pelo comando seed terá a **senha padrão: `123123`**.
+
+Você pode consultar e-mails e interesses exatos no arquivo `usuarios_teste.txt` gerado, mas aqui estão exemplos para você começar os testes:
+- **E-mail:** `a@a.com` (Usuário: Alice)
+- **E-mail:** `b@b.com` (Usuário: Bruno)
+- **E-mail:** `c@c.com` (Usuário: Carlos)
