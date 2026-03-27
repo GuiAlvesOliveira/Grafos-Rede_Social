@@ -10,7 +10,7 @@ interface NodeInfo {
   name: string;
   email: string;
   interests?: string;
-  val: number; // Degree
+  val: number; // In-Degree
 }
 
 interface LinkInfo {
@@ -23,7 +23,7 @@ interface GraphData {
   links: LinkInfo[];
 }
 
-export default function GraphVisualizer() {
+export default function FollowVisualizer() {
   const navigate = useNavigate();
   const [user, setUser] = useState<{ id: number; name: string } | null>(null);
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
@@ -53,13 +53,13 @@ export default function GraphVisualizer() {
 
   const fetchGraphData = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/graph/all');
+      const res = await fetch('http://localhost:3001/api/graph/follows/all');
       if (res.ok) {
         const data = await res.json();
         setGraphData(data);
       }
     } catch (err) {
-      toast.error('Erro ao carregar grafo visual');
+      toast.error('Erro ao carregar grafo visual de seguidores');
     }
   };
 
@@ -69,21 +69,20 @@ export default function GraphVisualizer() {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:3001/api/graph/path?source=${sourceId}&target=${targetId}`);
+      const res = await fetch(`http://localhost:3001/api/graph/follows/path?source=${sourceId}&target=${targetId}`);
       if (res.ok) {
         const data = await res.json();
         const pNodes = new Set<number>(data.path);
         const pLinks = new Set<string>();
         for (let i = 0; i < data.path.length - 1; i++) {
           pLinks.add(`${data.path[i]}-${data.path[i+1]}`);
-          pLinks.add(`${data.path[i+1]}-${data.path[i]}`); // Undirected visual match
         }
         setPathNodes(pNodes);
         setPathLinks(pLinks);
         setDistance(data.distance);
         
         if (data.path.length === 0) {
-          toast.error('Não existe caminho entre eles no grafo.');
+          toast.error('Não existe caminho direcionado entre eles.');
         } else {
           toast.success(`Caminho de ${data.distance} grau(s) encontrado!`);
         }
@@ -104,7 +103,6 @@ export default function GraphVisualizer() {
   const handleNodeClick = useCallback((node: any) => {
     setSelectedNode(node);
     setSelectedLink(null);
-    // Center the camera on node
     fgRef.current?.centerAt(node.x, node.y, 1000);
     fgRef.current?.zoom(4, 1000);
   }, []);
@@ -121,8 +119,8 @@ export default function GraphVisualizer() {
   };
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#f8fafc', overflow: 'hidden' }}>
-      <nav className="navbar" style={{ position: 'relative', zIndex: 10, borderBottom: '1px solid var(--border)' }}>
+    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fdf2f8', overflow: 'hidden' }}>
+      <nav className="navbar" style={{ position: 'relative', zIndex: 10, borderBottom: '1px solid var(--border)', background: 'white' }}>
         <Link to="/dashboard" className="nav-brand">
           <div className="nav-icon"><Network size={24} /></div>
           GraphConnect
@@ -130,8 +128,8 @@ export default function GraphVisualizer() {
         <div className="nav-links">
           <Link to="/dashboard" className="nav-link" style={{ fontWeight: 600 }}>Início</Link>
           <Link to="/network" className="nav-link" style={{ fontWeight: 600 }}>Minha Rede</Link>
-          <Link to="/grafo-visual" className="nav-link" style={{ fontWeight: 800, color: 'var(--primary)'}}>Grafo Interativo</Link>
-          <Link to="/grafo-follows" className="nav-link" style={{ fontWeight: 600 }}>Grafo Seguidores</Link>
+          <Link to="/grafo-visual" className="nav-link" style={{ fontWeight: 600 }}>Grafo Interativo</Link>
+          <Link to="/grafo-follows" className="nav-link" style={{ fontWeight: 800, color: '#e11d48'}}>Grafo Seguidores</Link>
           <span className="nav-link" style={{ cursor: 'default' }}>Olá, {user?.name}</span>
           <button onClick={handleLogout} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem', borderRadius: '8px', gap: '8px' }}>
             <LogOut size={16} /> Sair
@@ -143,16 +141,16 @@ export default function GraphVisualizer() {
         {/* SIDE BAR / Admin Controls */}
         <div style={{ width: '320px', backgroundColor: 'white', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', zIndex: 5, boxShadow: 'var(--shadow-md)' }}>
           <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
-              <Navigation size={20} color="var(--primary)" /> Calculador de Rotas
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem', color: '#e11d48' }}>
+              <Navigation size={20} color="#e11d48" /> Calculador Direcionado
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>
-              Simule cálculos BFS/Dijkstra vendo a menor distância mapeada na tela Canvas.
+              Descubra caminhos unicamente usando as setas das relações "Seguir".
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Onde começar? (Vértice: Origem)</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Eu estou em: (Origem)</label>
                 <select className="input-field" value={sourceId} onChange={e => setSourceId(e.target.value)} style={{ padding: '8px', fontSize: '0.9rem' }}>
                   <option value="">Selecione o usuário</option>
                   {graphData.nodes.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
@@ -160,7 +158,7 @@ export default function GraphVisualizer() {
               </div>
               
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Onde chegar? (Vértice: Alvo)</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Como chego em: (Alvo)</label>
                 <select className="input-field" value={targetId} onChange={e => setTargetId(e.target.value)} style={{ padding: '8px', fontSize: '0.9rem' }}>
                   <option value="">Selecione o usuário</option>
                   {graphData.nodes.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
@@ -168,43 +166,43 @@ export default function GraphVisualizer() {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginTop: '0.5rem' }}>
-                <button onClick={handleCalculatePath} className="btn-primary" style={{ flex: 1, padding: '10px', fontSize: '0.9rem' }}>Calcular Rota</button>
+                <button onClick={handleCalculatePath} className="btn-primary" style={{ flex: 1, padding: '10px', fontSize: '0.9rem', background: '#e11d48', borderColor: '#be123c' }}>Calcular Rota</button>
                 <button onClick={handleClearPath} className="btn-secondary" style={{ padding: '10px', fontSize: '0.9rem' }}>X</button>
               </div>
             </div>
 
             {distance !== null && (
-              <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(37, 99, 235, 0.1)', border: '1px dashed var(--primary)', borderRadius: '8px' }}>
-                <h4 style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--primary)', marginBottom: '0.5rem' }}>Resultado da Busca:</h4>
+              <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(225, 29, 72, 0.1)', border: '1px dashed #e11d48', borderRadius: '8px' }}>
+                <h4 style={{ fontWeight: 700, fontSize: '0.9rem', color: '#e11d48', marginBottom: '0.5rem' }}>Resultado da Busca:</h4>
                 <p style={{ fontSize: '0.9rem', marginBottom: '0' }}>Distância: <strong>{distance} graus</strong></p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>Caminho visualmente destacado em vermelho na tela plana.</p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>Caminho visualmente destacado em preto na tela plana.</p>
               </div>
             )}
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', backgroundColor: '#fafafa' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', color: 'var(--muted)' }}>
-              <Crosshair size={18} /> Inspeção do Grafo
+              <Crosshair size={18} /> Inspeção do Vértice
             </h3>
 
             {!selectedNode && !selectedLink && (
               <p style={{ fontSize: '0.85rem', color: 'var(--muted)', textAlign: 'center', marginTop: '2rem' }}>
-                Clique em um <strong>Vértice</strong> (círculo) ou uma <strong>Aresta</strong> (linha) no lado direito para detalhar o elemento matemático.
+                Clique em um <strong>Vértice</strong> (círculo) ou uma <strong>Aresta Direcionada</strong> (seta) no lado direito para detalhar.
               </p>
             )}
 
             {selectedNode && (
               <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
-                  <User size={24} color="var(--primary)" />
+                  <User size={24} color="#e11d48" />
                   <h4 style={{ fontWeight: 800, fontSize: '1.1rem' }}>{selectedNode.name}</h4>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>
                   <p><strong>ID:</strong> {selectedNode.id}</p>
                   <p><strong>E-mail:</strong> {selectedNode.email}</p>
                   <p><strong>Interesses:</strong> {selectedNode.interests || 'Nenhum'}</p>
-                  <p style={{ color: '#059669', fontWeight: 600, marginTop: '0.5rem' }}>Grau Espacial: {selectedNode.val}</p>
-                  <p style={{ color: 'var(--muted)', fontSize: '0.75rem', marginTop: '0.5rem' }}>O Grau refere-se ao número de conexões mapeadas a esse vértice (links saindo/entrando).</p>
+                  <p style={{ color: '#e11d48', fontWeight: 600, marginTop: '0.5rem' }}>Grau de Entrada: {selectedNode.val}</p>
+                  <p style={{ color: 'var(--muted)', fontSize: '0.75rem', marginTop: '0.5rem' }}>Número de setas que apontam diretamente para este usuário.</p>
                 </div>
               </div>
             )}
@@ -212,13 +210,12 @@ export default function GraphVisualizer() {
             {selectedLink && (
               <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
-                  <Info size={24} color="#e11d48" />
-                  <h4 style={{ fontWeight: 800, fontSize: '1rem' }}>Aresta Inspecionada</h4>
+                  <Info size={24} color="#111827" />
+                  <h4 style={{ fontWeight: 800, fontSize: '1rem' }}>Ligação Direcionada</h4>
                 </div>
                 <p style={{ fontSize: '0.85rem', lineHeight: '1.5' }}>
-                  <strong>{String((selectedLink.source as NodeInfo).name || selectedLink.source)}</strong> se conectou matematicamente a <strong>{String((selectedLink.target as NodeInfo).name || selectedLink.target)}</strong>.
+                  <strong>{String((selectedLink.source as NodeInfo).name || selectedLink.source)}</strong> aponta para <strong>{String((selectedLink.target as NodeInfo).name || selectedLink.target)}</strong>.
                 </p>
-                <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: '0.5rem' }}>Estrutura Interna de Relacionamento.</p>
               </div>
             )}
           </div>
@@ -236,18 +233,18 @@ export default function GraphVisualizer() {
               
               nodeColor={node => {
                 const id = node.id as number;
-                if (pathNodes.has(id)) return '#e11d48'; // Active Path highlight
+                if (pathNodes.has(id)) return '#111827'; // BLACK Path Highlight
                 if (selectedNode?.id === id) return 'var(--primary)'; // Selected highlight
-                if (node.val === 0) return '#94a3b8'; // Isolated points
-                return '#3b82f6'; // Standard blue
+                if (node.val === 0) return '#fca5a5'; // Isolated
+                return '#ef4444'; // RED Standard
               }}
               
               linkColor={link => {
                 const srcId = typeof link.source === 'object' ? (link.source as NodeInfo).id : link.source;
                 const tgtId = typeof link.target === 'object' ? (link.target as NodeInfo).id : link.target;
                 
-                if (pathLinks.has(`${srcId}-${tgtId}`)) return '#e11d48';
-                return 'rgba(148, 163, 184, 0.4)';
+                if (pathLinks.has(`${srcId}-${tgtId}`)) return '#111827'; // BLACK Path Highlight
+                return 'rgba(239, 68, 68, 0.4)'; // RED Transparent
               }}
               linkWidth={link => {
                 const srcId = typeof link.source === 'object' ? (link.source as NodeInfo).id : link.source;
@@ -258,18 +255,24 @@ export default function GraphVisualizer() {
               onNodeClick={handleNodeClick}
               onLinkClick={handleLinkClick}
               
-              linkDirectionalParticles={1}
+              linkDirectionalArrowLength={5}
+              linkDirectionalArrowRelPos={1}
+              linkDirectionalParticles={2}
               linkDirectionalParticleSpeed={0.005}
-              linkDirectionalParticleColor={() => 'rgba(59, 130, 246, 0.5)'}
+              linkDirectionalParticleColor={link => {
+                const srcId = typeof link.source === 'object' ? (link.source as NodeInfo).id : link.source;
+                const tgtId = typeof link.target === 'object' ? (link.target as NodeInfo).id : link.target;
+                if (pathLinks.has(`${srcId}-${tgtId}`)) return '#111827';
+                return 'rgba(239, 68, 68, 0.5)';
+              }}
               
-              // To make physics slightly bouncy and spaced
               d3VelocityDecay={0.4}
             />
           )}
 
           {/* Floater Hint */}
           <div style={{ position: 'absolute', bottom: '20px', right: '20px', background: 'rgba(255, 255, 255, 0.8)', padding: '10px 16px', borderRadius: '999px', fontSize: '0.85rem', color: 'var(--muted)', backdropFilter: 'blur(10px)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-            Navegue usando Scroll + Click & Drag
+            Zoom/Pan habilitado. Grafo Dirigido Exclusivo de Seguidores.
           </div>
         </div>
       </div>

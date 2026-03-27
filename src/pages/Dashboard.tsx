@@ -146,6 +146,7 @@ export default function Dashboard() {
           <Link to="/dashboard" className="nav-link" style={{ fontWeight: 800, color: 'var(--primary)'}}>Início</Link>
           <Link to="/network" className="nav-link" style={{ fontWeight: 600 }}>Minha Rede</Link>
           <Link to="/grafo-visual" className="nav-link" style={{ fontWeight: 600 }}>Grafo Interativo</Link>
+          <Link to="/grafo-follows" className="nav-link" style={{ fontWeight: 600 }}>Grafo Seguidores</Link>
           <span className="nav-link" style={{ cursor: 'default' }}>Olá, {user.name}</span>
           <button onClick={handleLogout} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem', borderRadius: '8px', gap: '8px' }}>
             <LogOut size={16} /> Sair

@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import NetworkView from './pages/NetworkView';
 import GraphVisualizer from './pages/GraphVisualizer';
+import FollowVisualizer from './pages/FollowVisualizer';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/network" element={<NetworkView />} />
         <Route path="/grafo-visual" element={<GraphVisualizer />} />
+        <Route path="/grafo-follows" element={<FollowVisualizer />} />
       </Routes>
     </Router>
   );

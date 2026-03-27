@@ -274,6 +274,29 @@ app.get('/api/graph/affinity/:userId', async (req, res) => {
   }
 });
 
+// Directed Visualizations Endpoints (Follows)
+app.get('/api/graph/follows/all', async (req, res) => {
+  try {
+    const { getDirGraphRaw } = await import('./graph.js');
+    const data = await getDirGraphRaw(db);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar grafo dirigido bruto' });
+  }
+});
+
+app.get('/api/graph/follows/path', async (req, res) => {
+  try {
+    const { source, target } = req.query;
+    if (!source || !target) return res.status(400).json({ error: 'Faltam origiem/destino' });
+    const { getShortestPathDirBFS } = await import('./graph.js');
+    const data = await getShortestPathDirBFS(db, source, target);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar caminho direcionado' });
+  }
+});
+
 // Visualization Endpoints
 app.get('/api/graph/all', async (req, res) => {
   try {

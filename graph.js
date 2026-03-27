@@ -262,3 +262,88 @@ export async function getShortestPathBFS(db, sourceId, targetId) {
 
   return { path, distance: path.length - 1 };
 }
+
+// 6. Raw Directed Graph Data for Visualization (Follows)
+export async function getDirGraphRaw(db) {
+  return new Promise((resolve, reject) => {
+    db.all('SELECT * FROM users', [], (err, users) => {
+      if (err) return reject(err);
+      db.all('SELECT * FROM user_follows', [], (err, follows) => {
+        if (err) return reject(err);
+        
+        const nodes = users.map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          interests: u.interests,
+          // Calculate In-Degree purely as node 'val' (size)
+          val: follows.filter(f => f.followed_id === u.id).length
+        }));
+
+        const links = follows.map(f => ({
+          source: f.follower_id,
+          target: f.followed_id
+        }));
+
+        resolve({ nodes, links });
+      });
+    });
+  });
+}
+
+// 7. Shortest Path Directed BFS (for Follows visualization)
+export async function getShortestPathDirBFS(db, sourceId, targetId) {
+  return new Promise((resolve, reject) => {
+    db.all('SELECT * FROM users', [], (err, users) => {
+      if (err) return reject(err);
+      db.all('SELECT * FROM user_follows', [], (err, follows) => {
+        if (err) return reject(err);
+
+        sourceId = Number(sourceId);
+        targetId = Number(targetId);
+
+        // Build directed adjacency list
+        const adjDir = new Map();
+        users.forEach(u => adjDir.set(u.id, []));
+        follows.forEach(f => {
+          if (adjDir.has(f.follower_id) && adjDir.has(f.followed_id)) {
+            adjDir.get(f.follower_id).push(f.followed_id);
+          }
+        });
+
+        const queue = [sourceId];
+        const visited = new Set([sourceId]);
+        const parent = new Map();
+        parent.set(sourceId, null);
+
+        let found = false;
+        while(queue.length > 0) {
+          const curr = queue.shift();
+          if(curr === targetId) {
+            found = true;
+            break;
+          }
+          const neighbors = adjDir.get(curr) || [];
+          for(const n of neighbors) {
+            if(!visited.has(n)) {
+              visited.add(n);
+              parent.set(n, curr);
+              queue.push(n);
+            }
+          }
+        }
+
+        if(!found) return resolve({ path: [] });
+
+        const path = [];
+        let curr = targetId;
+        while(curr !== null) {
+          path.unshift(curr);
+          curr = parent.get(curr);
+        }
+
+        resolve({ path, distance: path.length - 1 });
+      });
+    });
+  });
+}
